@@ -28,13 +28,14 @@ from django.contrib.auth.views import logout as django_logout
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.http import Http404, HttpResponse
 from django.http import HttpResponseRedirect  # 30x
-from django.http import  HttpResponseBadRequest, HttpResponseForbidden  # 40x
+from django.http import HttpResponseBadRequest, HttpResponseForbidden  # 40x
 from django.http import HttpResponseServerError  # 50x
 from django.views.decorators.http import require_POST
 from django.shortcuts import render
 from django.template import TemplateDoesNotExist
+from django.utils.encoding import force_bytes
 from django.utils.http import is_safe_url
-from django.utils.six import text_type, binary_type
+from django.utils.six import text_type
 from django.views.decorators.csrf import csrf_exempt
 
 from saml2 import BINDING_HTTP_REDIRECT, BINDING_HTTP_POST
@@ -199,7 +200,7 @@ def login(request,
                 http_response = render(request, post_binding_form_template, {
                     'target_url': location,
                     'params': {
-                        'SAMLRequest': base64.b64encode(binary_type(request_xml, 'UTF-8')),
+                        'SAMLRequest': base64.b64encode(force_bytes(request_xml)),
                         'RelayState': came_from,
                         },
                     })
