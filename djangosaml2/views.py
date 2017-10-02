@@ -61,6 +61,42 @@ from djangosaml2.utils import (
 logger = logging.getLogger('djangosaml2')
 
 
+def write_xml_to_file(xmlstr):
+    import os
+    from datetime import datetime
+    now = datetime.now()
+    str_now = str(now).replace(" ", "_").replace(":", "_")
+
+    base64_file_path = os.path.expanduser('~/base64_xml_{}.txt'.format(str_now))
+    xml_file_path = os.path.expanduser('~/xml_{}.xml'.format(str_now))
+
+    with open(base64_file_path, 'w') as f:
+        f.write(xmlstr)
+
+    with open(xml_file_path, 'w') as f:
+        f.write(base64.decodestring(xmlstr))
+
+
+def chunk_it(x, chunk_size):
+    chunks = len(x)
+    return [x[i:i+chunk_size] for i in range(0, chunks, chunk_size)]
+
+
+def chunk_the_xml(xmlstr, chunk_size):
+    logger.info("---------------------------XML b64--------------------")
+    for i, c in enumerate(chunk_it(xmlstr, chunk_size), start=1):
+        content = "{}\n{}".format(i, c)
+        logger.info(content)
+
+    logger.info("---------------------------XML--------------------")
+    actual_xml = base64.decodestring(xmlstr)
+    for i, c in enumerate(chunk_it(actual_xml, chunk_size), start=1):
+        content = "{}\n{}".format(i, c)
+        logger.info(content)
+
+    logger.info("---------------------------DONE--------------------")
+
+
 def _set_subject_id(session, subject_id):
     session['_saml2_subject_id'] = code(subject_id)
 
@@ -261,6 +297,9 @@ def assertion_consumer_service(request,
     except KeyError:
         logger.warning('Missing "SAMLResponse" parameter in POST data.')
         raise SuspiciousOperation
+
+    write_xml_to_file(xmlstr)
+    chunk_the_xml(xmlstr, 2000)
 
     client = Saml2Client(conf, identity_cache=IdentityCache(request.session))
 
